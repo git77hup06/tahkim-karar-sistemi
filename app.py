@@ -15,6 +15,33 @@ KULLANICILAR = {
     "hakem3": "tahkim2026_heyet"
 }
 
+# Sütun yapısının uygun bir yerine veya en üst kısma eklenebilir:
+st.markdown("##### 🔍 Başvuru Konusu Seçimi")
+uyusmazlik_turu = st.selectbox(
+    "Uyuşmazlık Konusu Nedir?",
+    [
+        "Değer Kaybı",
+        "Hasar Bedeli",
+        "Hasar Bedeli ve Değer Kaybı",
+        "Araç Mahrumiyet Bedeli",
+        "Diğer (Manuel Giriniz)"
+    ]
+)
+
+# Seçime göre Word'e gönderilecek kelime ekini otomatik belirliyoruz
+if uyusmazlik_turu == "Değer Kaybı":
+    uyusmazlik_konusu_eki = "değer kaybının"
+elif uyusmazlik_turu == "Hasar Bedeli":
+    uyusmazlik_konusu_eki = "hasar bedelinin"
+elif uyusmazlik_turu == "Hasar Bedeli ve Değer Kaybı":
+    uyusmazlik_konusu_eki = "hasar bedeli ve değer kaybının"
+elif uyusmazlik_turu == "Araç Mahrumiyet Bedeli":
+    uyusmazlik_konusu_eki = "araç mahrumiyet bedelinin"
+else:
+    # Kullanıcı "Diğer" seçerse kendi ekini eliyle yazsın diye serbest metin alanı açılır
+    uyusmazlik_konusu_eki = st.text_input("Lütfen uyuşmazlık konusunu ekli haliyle yazın (Örn: ikame araç bedelinin):")
+
+
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
@@ -113,7 +140,8 @@ else:
                     "hakem_tarafından_kabul_edilen_tutar": f"{kabul_edilen_tutar:,.2f} TL",
                     "basvuru_sahibi_tarafından_talep_edilen_ekspertiz_ücreti": f"{ekspertiz_ucreti:,.2f} TL",
                     "basvuru_sahibi_tarafindan_davali_sigorta_sirketine_yapilan_basvuri_tarihi": basvuru_tarihi_str,
-                    "hakem_tarafindan_kabul_edilen_faiz_baslangic_tarihi": faiz_tarihi_str
+                    "hakem_tarafindan_kabul_edilen_faiz_baslangic_tarihi": faiz_tarihi_str,
+                    "uyusmazlik_konusu_eki": uyusmazlik_konusu_eki
                 }
                 
                 # Verileri Word şablonuna bas
