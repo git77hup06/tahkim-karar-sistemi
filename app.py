@@ -69,7 +69,7 @@ else:
 
             st.markdown("##### 📅 Süreç ve Temerrüt Tarihleri")
             kaza_tarihi = st.date_input("Kaza Tarihi", value=datetime.today()).strftime("%d.%m.%Y")
-            basvuru_tarihi = st.date_input("Sigorta Şirketine Başvuru Tarihi", value=datetime.today()).strftime("%d.%m.%Y")
+            basvuru_tarihi = st.date_input("Sigorta Şiriketi Başvuru Tarihi", value=datetime.today()).strftime("%d.%m.%Y")
             faiz_tarihi = st.date_input("Temerrüt / Faiz Başlangıç Tarihi", value=datetime.today()).strftime("%d.%m.%Y")
             odeme_tarihi = st.date_input("Kaza Sonrası Kısmi Ödeme Tarihi (Varsa)", value=datetime.today()).strftime("%d.%m.%Y")
 
@@ -96,7 +96,7 @@ else:
                 degisken_1_2 = ""
 
             # Kelime aralarındaki çift boşluk hatasını engellemek için düzeltme süzgeci
-            ara_metin_eki = f" {degisken_1_2}".image_search() if degisken_1_2 else ""
+            ara_metin_eki = f" {degisken_1_2}" if degisken_1_2 else ""
 
             # --- SİZİN HAZIRLADIĞINIZ metin_1_2 KURALI ---
             if bilirkisi_raporu_alindi_mi == "Evet, Alındı":
@@ -148,7 +148,6 @@ else:
 
                 veri_havuzu = {
                     "uyusmazlik_konusu_eki": uyusmazlik_konusu_eki,
-                    # Word şablonuna doğrudan basılacak akıllı paragraf etiketi:
                     "basvurunun_hakeme_intikaline_incelenmesine_iliskin_surec_paragrafi": basvurunun_hakeme_intikaline_incelenmesine_iliskin_surec_paragrafi,
                     "kaza_tarihi": kaza_tarihi,
                     "basvuru_tarihi": basvuru_tarihi,
@@ -178,3 +177,5 @@ else:
                 
                 dosya_hafizasi = io.BytesIO()
                 doc.save(dosya_hafizasi)
+                dosya_hafizasi.seek(0)
+                
