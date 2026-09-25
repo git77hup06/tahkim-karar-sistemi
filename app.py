@@ -178,3 +178,14 @@ else:
                 dosya_hafizasi = io.BytesIO()
                 doc.save(dosya_hafizasi)
                 dosya_hafizasi.seek(0)
+                
+                st.success("🎉 Karar metni, kurallarınıza uygun şekilde başarıyla oluşturuldu!")
+                
+                st.download_button(
+                    label="📥 Doldurulmuş Word Dosyasını İndir (.docx)",
+                    data=dosya_hafizasi,
+                    file_name=f"Tahkim_Gerekceli_Karar_{datetime.today().strftime('%Y%m%d')}.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+            except Exception as e:
+                st.error(f"Hata meydana geldi: {e}")
