@@ -4,7 +4,7 @@ import io
 import os
 from datetime import datetime
 
-st.set_page_config(page_title="Tahkim Karar Otomasyonu v4", layout="wide", page_icon="⚖️")
+st.set_page_config(page_title="Tahkim Karar Otomasyonu v6", layout="wide", page_icon="⚖️")
 st.title("⚖️ Sigorta Tahkim Komisyonu Karar Otomasyonu")
 
 # Kullanıcı Yönetimi
@@ -43,20 +43,12 @@ else:
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.markdown("##### 🔍 Başvuru Konusu Seçimi")
-            # Dinamik konu değişimi sağlayan yeni seçim kutusu
+            st.markdown("##### 🔍 Başvuru ve Merci Seçimi")
             uyusmazlik_turu = st.selectbox(
                 "Uyuşmazlık Konusu Nedir?",
-                [
-                    "Değer Kaybı",
-                    "Hasar Bedeli",
-                    "Hasar Bedeli ve Değer Kaybı",
-                    "Araç Mahrumiyet Bedeli",
-                    "Diğer"
-                ]
+                ["Değer Kaybı", "Hasar Bedeli", "Hasar Bedeli ve Değer Kaybı", "Araç Mahrumiyet Bedeli", "Diğer"]
             )
             
-            # Seçilen türe göre Word'e gidecek ek belirleniyor
             if uyusmazlik_turu == "Değer Kaybı":
                 uyusmazlik_konusu_eki = "değer kaybının"
             elif uyusmazlik_turu == "Hasar Bedeli":
@@ -67,6 +59,13 @@ else:
                 uyusmazlik_konusu_eki = "araç mahrumiyet bedelinin"
             else:
                 uyusmazlik_konusu_eki = st.text_input("Lütfen uyuşmazlık konusunu ekli haliyle yazın:", placeholder="Örn: ikame araç bedelinin")
+
+            # --- SİZİN HAZIRLADIĞINIZ degisken_1_3 (MERCI) ---
+            merci_turu = st.radio("Karar Veren Merci:", ["Tek Hakem (Hakemliğimizce)", "Heyet (Heyetimizce)"])
+            degisken_1_3 = "Hakemliğimizce" if "Tek Hakem" in merci_turu else "Heyetimizce"
+
+            # --- SİZİN HAZIRLADIĞINIZ metin_1_2 İÇİN BİLİRKİŞİ SEÇİMİ ---
+            bilirkisi_raporu_alindi_mi = st.radio("Bilirkişi Raporu Alındı mı?", ["Evet, Alındı", "Hayır, Alınmadı"])
 
             st.markdown("##### 📅 Süreç ve Temerrüt Tarihleri")
             kaza_tarihi = st.date_input("Kaza Tarihi", value=datetime.today()).strftime("%d.%m.%Y")
@@ -82,6 +81,35 @@ else:
             
             st.markdown("##### 📉 Ödeme ve Bakiye Hesapları")
             odeme_tutari = st.number_input("Şirketin Kaza Sonrası Ödediği Tutar", min_value=0.0, value=1780.0, format="%.2f")
+            
+            # --- SİZİN HAZIRLADIĞINIZ degisken_1_2 (ISLAH & ÖDEME MANTIĞI) ---
+            has_islah = islah_tutari > 0
+            has_payment = odeme_tutari > 0
+
+            if has_islah and not has_payment:
+                degisken_1_2 = "ıslah edilen"
+            elif has_islah and has_payment:
+                degisken_1_2 = "ıslah edilen ve konusuz kaldığı anlaşılan"
+            elif not has_islah and has_payment:
+                degisken_1_2 = "konusuz kaldığı anlaşılan"
+            else:
+                degisken_1_2 = ""
+
+            # Kelime aralarındaki çift boşluk hatasını engellemek için düzeltme süzgeci
+            ara_metin_eki = f" {degisken_1_2}".image_search() if degisken_1_2 else ""
+
+            # --- SİZİN HAZIRLADIĞINIZ metin_1_2 KURALI ---
+            if bilirkisi_raporu_alindi_mi == "Evet, Alındı":
+                metin_1_2 = f"yargılama sırasında alınan bilirkişi raporunun taraflara tebliğ sonrasında{ara_metin_eki} uyuşmazlık {degisken_1_3} karara bağlanmıştır."
+            else:
+                metin_1_2 = f"dosya muhteviyatı ve ilgili mevzuat çerçevesinde uyuşmazlık {degisken_1_3} karara bağlanmıştır."
+
+            # --- SİZİN HAZIRLADIĞINIZ nihai paragraf yapısı ---
+            basvurunun_hakeme_intikaline_incelenmesine_iliskin_surec_paragrafi = (
+                f"Başvuru sahibi talebinin davalı tarafından karşılanmaması nedeniyle ortaya çıkan uyuşmazlığın çözümü "
+                f"için tahkim yargılamasına başvurulmuş, {metin_1_2}"
+            )
+
             bakiye_bedel = tespit_edilen_deger_kaybi - odeme_tutari
             st.caption(f"**Otomatik Hesaplanan Bakiye:** {bakiye_bedel:,.2f} TL")
             
@@ -115,12 +143,13 @@ else:
             try:
                 doc = DocxTemplate(secilen_sablon)
                 
-                # Türkçe para formatlama fonksiyonu (1.000,00 TL biçimi)
                 def tr_money(val):
                     return f"{val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") + " TL"
 
                 veri_havuzu = {
-                    "uyusmazlik_konusu_eki": uyusmazlik_konusu_eki, # Word şablonuna aktarılan yeni dinamik alan
+                    "uyusmazlik_konusu_eki": uyusmazlik_konusu_eki,
+                    # Word şablonuna doğrudan basılacak akıllı paragraf etiketi:
+                    "basvurunun_hakeme_intikaline_incelenmesine_iliskin_surec_paragrafi": basvurunun_hakeme_intikaline_incelenmesine_iliskin_surec_paragrafi,
                     "kaza_tarihi": kaza_tarihi,
                     "basvuru_tarihi": basvuru_tarihi,
                     "faiz_tarihi": faiz_tarihi,
@@ -149,16 +178,3 @@ else:
                 
                 dosya_hafizasi = io.BytesIO()
                 doc.save(dosya_hafizasi)
-                dosya_hafizasi.seek(0)
-                
-                st.success("🎉 Karar belgesi paylaştığınız şablon yapısına göre başarıyla dolduruldu!")
-                
-                st.download_button(
-                    label="📥 Doldurulmuş Word Dosyasını İndir (.docx)",
-                    data=dosya_hafizasi,
-                    file_name=f"Tahkim_Gerekceli_Karar_{datetime.today().strftime('%Y%m%d')}.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
-            except Exception as e:
-                st.error(f"Hata meydana geldi: {e}")
-
