@@ -178,3 +178,4 @@ else:
                 dosya_hafizasi = io.BytesIO()
                 doc.save(dosya_hafizasi)
                 dosya_hafizasi.seek(0)
+                
