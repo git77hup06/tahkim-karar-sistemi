@@ -8,7 +8,7 @@ from datetime import datetime
 st.set_page_config(page_title="Tahkim Karar Sistemi", layout="wide")
 st.title("⚖️ Sigorta Tahkim Komisyonu Karar Otomasyonu")
 
-# 1. KULLANICI GİRİŞ KONTROLÜ (Sizin ve 2-3 arkadaşınızın şifresi)
+# 1. KULLANICI GİRİŞ KONTROLÜ
 KULLANICILAR = {
     "hakem1": "tahkim2026", 
     "hakem2": "tahkim2026_ozel",
@@ -51,57 +51,69 @@ else:
         st.markdown("---")
         st.markdown("### 📋 2. Form Bilgilerini Giriniz")
 
-        # --- ADIM 2: FORM ALANLARI (3 Sütunlu Tasarım) ---
+        # --- ADIM 2: FORM ALANLARI (3 Sütunlu Gelişmiş Tasarım) ---
         col1, col2, col3 = st.columns(3)
         
         with col1:
+            st.markdown("##### 📅 Tarih ve Süreç Bilgileri")
             kaza_tarihi_input = st.date_input("Kaza Tarihi", value=datetime.today())
-            kaza_tarihi_str = kaza_tarihi_input.strftime("%d.%m.%Y") # Türkiye tarih formatı
-            ilk_dava_degeri = st.number_input("İlk Dava Değeri (TL)", min_value=0.0, format="%.2f")
-            kabul_edilen_tutar = st.number_input("Kabul Edilen Tutar (TL)", min_value=0.0, format="%.2f")
+            kaza_tarihi_str = kaza_tarihi_input.strftime("%d.%m.%Y")
             
+            basvuru_tarihi_input = st.date_input("Sigorta Şirketine Başvuru Tarihi", value=datetime.today())
+            basvuru_tarihi_str = basvuru_tarihi_input.strftime("%d.%m.%Y")
+            
+            faiz_tarihi_input = st.date_input("Faiz Başlangıç Tarihi", value=datetime.today())
+            faiz_tarihi_str = faiz_tarihi_input.strftime("%d.%m.%Y")
+            
+            odeme_tarihi_input = st.date_input("Sigorta Şirketi Ödeme Tarihi (Varsa)", value=datetime.today())
+            odeme_tarihi_str = odeme_tarihi_input.strftime("%d.%m.%Y")
+
         with col2:
-            kusur_orani = st.text_input("Sigorta Şirketi Kusur Oranı", placeholder="Örn: %75")
-            ekspertiz_ucreti = st.number_input("Ekspertiz Ücreti (TL)", min_value=0.0, format="%.2f")
-            basvuru_ucreti = st.number_input("Başvuru Ücreti (TL)", min_value=0.0, value=1200.0)
+            st.markdown("##### 💰 Parasal Değerler (TL)")
+            dava_degeri = st.number_input("Dava Değeri (İlk Talep)", min_value=0.0, format="%.2f")
+            islah_tutari = st.number_input("Islah Tutarı (Varsa)", min_value=0.0, format="%.2f")
+            kabul_edilen_tutar = st.number_input("Hakem Tarafından Kabul Edilen Tutar", min_value=0.0, format="%.2f")
+            odeme_tutari = st.number_input("Sigorta Şirketi Ödeme Tutarı (Varsa)", min_value=0.0, format="%.2f")
+            ekspertiz_ucreti = st.number_input("Talep Edilen Ekspertiz Ücreti", min_value=0.0, format="%.2f")
+            tespit_edilen_deger_kaybi = st.number_input("Bilirkişi Raporunda Tespit Edilen Değer Kaybı", min_value=0.0, format="%.2f")
 
         with col3:
-            tebligat_ucreti = st.number_input("Tebligat Ücreti (TL)", min_value=0.0, value=55.0)
-            bilirkisi_ucreti = st.number_input("Bilirkişi Ücreti (TL)", min_value=0.0, value=2750.0)
+            st.markdown("##### 🚗 Araç, Şirket ve Kusur Bilgileri")
+            sigorta_sirketi_unvani = st.text_input("Davalı Sigorta Şirketi Ünvanı", placeholder="Örn: X Sigorta A.Ş.")
+            sigortali_arac_plaka = st.text_input("Sigorta Şirketine Sigortalı Araç Plakası")
+            sigortali_kusur_orani = st.text_input("Sigorta Şirketine Sigortalı Araç Kusur Oranı", placeholder="Örn: %75 veya 8/8")
+            basvuran_arac_plaka = st.text_input("Başvuru Sahibine Ait Araç Plakası")
+            talep_edilen_faiz = st.text_input("Talep Edilen Faiz Türü", value="Yasal Faiz")
 
-        st.markdown("#### ✍️ Detaylı Metin Paragrafları")
-        basvuru_sahibi_beyani = st.text_area("Başvuran Vekili Beyanı (Gerekirse uzun metin yapıştırın)")
-        sigorta_sirketi_beyani = st.text_area("Sigorta Şirketi Beyanı / Cevap Yazısı Özeti")
-        basvuran_ek_belgeleri = st.text_input("Başvuran Vekili Tarafından Sunulan Ek Belgeler")
-
-        # --- ADIM 3: ARKA PLAN MATEMATİKSEL OTOMASYONU ---
-        toplam_yargilama_gideri = basvuru_ucreti + tebligat_ucreti + bilirkisi_ucreti
-        reddedilen_tutar = max(0.0, ilk_dava_degeri - kabul_edilen_tutar)
-        kabul_orani = (kabul_edilen_tutar / ilk_dava_degeri) if ilk_dava_degeri > 0 else 0
-        davali_yargilama_gideri_payi = toplam_yargilama_gideri * kabul_orani
+        st.markdown("#### ✍️ Detaylı Metin / Beyan Alanları")
+        sigorta_sirketi_cevabi = st.text_area("Sigorta Şirketi Cevap Yazısı Özeti (Beyanı)", height=100)
 
         st.markdown("---")
         
         # --- ADIM 4: WORD ÜRETME VE İNDİRME ---
         if st.button("📄 Karar Metnini Doldur ve Word Dosyası Hazırla", type="primary"):
             try:
-                # Seçilen Word dosyasını arka planda aç
+                # Seçilen Word dosyasını arka planda açıyoruz
                 doc = DocxTemplate(secilen_sablon)
                 
-                # Word içindeki {{etiket}} isimleri ile formdaki kutuları eşleştiriyoruz
+                # Word içindeki {{etiket}} isimleri ile formdaki kutuları tam olarak eşleştiriyoruz
                 veri_havuzu = {
                     "kaza_tarihi": kaza_tarihi_str,
-                    "ilk_dava_degeri": f"{ilk_dava_degeri:,.2f}",
-                    "kabul_edilen_tutar": f"{kabul_edilen_tutar:,.2f}",
-                    "reddedilen_tutar": f"{reddedilen_tutar:,.2f}",
-                    "kusur_orani": kusur_orani,
-                    "ekspertiz_ucreti": f"{ekspertiz_ucreti:,.2f}",
-                    "basvuru_sahibi_beyani": basvuru_sahibi_beyani,
-                    "sigorta_sirketi_beyani": sigorta_sirketi_beyani,
-                    "basvuran_ek_belgeleri": basvuran_ek_belgeleri,
-                    # Kodun otomatik hesapladığı matematiksel sonuçlar:
-                    "toplam_yargilama_gideri": f"{toplam_yargilama_gideri:,.2f}",
-                    "davali_yargilama_gideri_payi": f"{davali_yargilama_gideri_payi:,.2f}"
+                    "dava_degeri": f"{dava_degeri:,.2f} TL",
+                    "talep_edilen_faiz": talep_edilen_faiz,
+                    "sigorta_sirketi_cevabi": sigorta_sirketi_cevabi,
+                    "sigorta_sirketine_sigortali_arac_plakasi": sigortali_arac_plaka,
+                    "sigorta_sirketine_sigortali_arac_kusur_orani": sigortali_kusur_orani,
+                    "basvuru_sahibine_ait_arac_plakasi": basvuran_arac_plaka,
+                    "bilirkişi_raporunda_tespit_edilen_deger_kaybi_tutari": f"{tespit_edilen_deger_kaybi:,.2f} TL",
+                    "davalı_sigorta_sirketi_unvani": sigorta_sirketi_unvani,
+                    "davali_sigorta_sirketi_deger_kaybi_ödeme_tarihi": odeme_tarihi_str,
+                    "davali_sigorta_sirketi_deger_kaybi_ödeme_tutari": f"{odeme_tutari:,.2f} TL",
+                    "basvuru_sahibi_islah_tutari": f"{islah_tutari:,.2f} TL",
+                    "hakem_tarafından_kabul_edilen_tutar": f"{kabul_edilen_tutar:,.2f} TL",
+                    "basvuru_sahibi_tarafından_talep_edilen_ekspertiz_ücreti": f"{ekspertiz_ucreti:,.2f} TL",
+                    "basvuru_sahibi_tarafindan_davali_sigorta_sirketine_yapilan_basvuri_tarihi": basvuru_tarihi_str,
+                    "hakem_tarafindan_kabul_edilen_faiz_baslangic_tarihi": faiz_tarihi_str
                 }
                 
                 # Verileri Word şablonuna bas
