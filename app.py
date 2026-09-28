@@ -74,7 +74,7 @@ if st.button("Karar Metnini Şablona İşle ve Hazırla"):
     basvuru_sahibinin_iddia_delil_talepleri_paragrafi = f"Başvuru sahibi vekili tarafından uyuşmazlık başvuru formu ve eki beyanında özetle; araçta {degisken_2_1_1}, {basvuru_sahibi_beyani} belirtilerek, şimdilik {nihai_kontrol_tutari:,.2f} TL {degisken_2_1_3} davalı Şirket tarafından karşılanması talep edilmiştir. İddialara dayanak olarak, {basvuran_ek_belgeleri} dosyaya sunulmuştur."
     sigorta_kuruluşunun_iddia_delil_talepleri_paragrafi = f"Davalı Şirket vekili tarafından sunulan cevap yazısında özetle; {sigorta_sirketi_beyani} belirtilerek davanın reddi savunulmuştur." if sirket_cevap_verdi_mi else "Davalı Şirket tarafından herhangi bir cevap sunulmamıştır."
     uyusmazliga_uygulanacak_hukumler_paragrafi = "Uyuşmazlığın çözümünde 5684 sayılı Sigortacılık Kanunu, 6102 sayılı Türk Ticaret Kanunu, 6098 sayılı Türk Borçlar Kanunu, 2918 sayılı Karayolları Trafik Kanunu, 6100 sayılı Hukuk Muhakemeleri Kanunu dikkate alınmıştır."
-        degisken_4_1 = f"Dosya konusu uyuşmazlık, araçta oluşan {degisken_1_1} Zorunlu Mali Sorumluluk Sigortası kapsamında tazminine ilişkindir."
+    degisken_4_1 = f"Dosya konusu uyuşmazlık, araçta oluşan {degisken_1_1} Zorunlu Mali Sorumluluk Sigortası kapsamında tazminine ilişkindir."
     degisken_4_4 = f"Söz konusu kazanın oluşumunda davalı Şirkette sigortalı araç sürücüsünün {davali_sirkete_sigortali_arac_kusuru} kusurlu olduğu anlaşılmıştır."
     degisken_4_5 = "Uyuşmazlık konusu kazanın trafik sözleşmenin vadesi içinde gerçekleştiği tespit edilerek davanın esasına geçilmiştir."
     degisken_4_6 = "2918 Sayılı Karayolları Trafik Kanunu’nun 85’nci ve 91'nci maddeleri uyarınca işletenin sorumluluğu düzenlenmiştir."
