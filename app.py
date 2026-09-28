@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import io
 
 st.set_page_config(layout="wide", page_title="Sigorta Tahkim Otomasyonu")
-st.title("⚖️ Sigorta Tahkim Komisyonu Karar Otomasyonu (Güncel Son Sürüm)")
+st.title("⚖️ Sigorta Tahkim Komisyonu Karar Otomasyonu")
 
 # --- FORMA GİRİLECEK BİLGİLER (SÜTUN DÜZENİ) ---
 col1, col2 = st.columns(2)
@@ -56,7 +56,7 @@ with col2:
     st.subheader("🔬 2. Bilirkişi Raporu ve Ödeme Alanları")
     bilirkisi_raporu_alindi = st.checkbox("Bilirkişi Raporu Alındı mı?", value=True)
     
-    # Rapor ve Ödeme Tutarları
+    # Rapor ve Ödeme Tutarları varsayılan sıfırlama
     bilirkişi_raporunda_tespit_edilen_dk_tutari = 0.0
     bilirkişi_raporunda_tespit_edilen_hb_tutari_kdv_haric = 0.0
     bilirkişi_raporunda_tespit_edilen_hb_tutari_kdv_dahil = 0.0
@@ -135,12 +135,12 @@ if st.button("Karar Metnini Şablona İşle ve Hazırla"):
     degisken_1_3 = "Hakemliğimizce" if nihai_kontrol_tutari < 122000 else "Heyetimizce"
     
     if bilirkisi_raporu_alindi:
-        odeme_var_mi = (davali_siket_dk_odemesi > 0) or (davali_siket_hb_odemesi > 0)
-        if islah_var and odeme_var_mi:
+        hasar_bedeli_veya_dk_odemesi_var_mi = (davali_siket_dk_odemesi > 0) or (davali_siket_hb_odemesi > 0)
+        if islah_var and hasar_bedeli_veya_dk_odemesi_var_mi:
             degisken_1_2 = "ıslah edilen ve konusuz kaldığı anlaşılan"
-        elif islah_var and not odeme_var_mi:
+        elif islah_var and not hasar_bedeli_veya_dk_odemesi_var_mi:
             degisken_1_2 = "ıslah edilen"
-        elif not islah_var and odeme_var_mi:
+        elif not islah_var and hasar_bedeli_veya_dk_odemesi_var_mi:
             degisken_1_2 = "konusuz kaldığı anlaşılan"
         else:
             degisken_1_2 = ""
@@ -166,4 +166,3 @@ if st.button("Karar Metnini Şablona İşle ve Hazırla"):
     else:
         degisken_2_1_1 = "hasar meydana geldiği ve aracın değer kaybına uğradığı"
 
-    nitelik_ve_faiz = f"{başvurunun_niteligi} {degisken_2_1_4}".strip()
