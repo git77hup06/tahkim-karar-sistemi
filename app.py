@@ -1,0 +1,169 @@
+import streamlit as st
+from docxtpl import DocxTemplate
+from datetime import datetime, timedelta
+import io
+
+st.set_page_config(layout="wide", page_title="Sigorta Tahkim Otomasyonu")
+st.title("⚖️ Sigorta Tahkim Komisyonu Karar Otomasyonu (Güncel Son Sürüm)")
+
+# --- FORMA GİRİLECEK BİLGİLER (SÜTUN DÜZENİ) ---
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("📋 1. Başvuru ve Taraf Bilgileri")
+    basvuru_konusu = st.selectbox(
+        "Başvuru Konusu",
+        [
+            "Değer Kaybı", "Değer Kaybı ve Kusur", 
+            "Hasar Bedeli", "Hasar Bedeli ve Kusur", 
+            "Hasar Bedeli ve Değer Kaybı", "Hasar Bedeli ve Değer Kaybı ve Kusur",
+            "Rayiç Bedel Farkı"
+        ]
+    )
+    
+    # Dava Değerleri
+    ilk_dava_degeri_dk = st.number_input("İlk Dava Değeri - Değer Kaybı (TL) [ilk_dava_degeri_dk]", min_value=0.0, value=0.0)
+    ilk_dava_degeri_hb = st.number_input("İlk Dava Değeri - Hasar Bedeli (TL) [ilk_dava_degeri_hb]", min_value=0.0, value=0.0)
+    
+    # Islah Verileri
+    islah_var = st.checkbox("Talep Artırımı (Islah) Var mı?")
+    deger_kaybi_islah_tutari = 0.0
+    hasar_bedeli_kaybi_islah_tutari = 0.0
+    if islah_var:
+        deger_kaybi_islah_tutari = st.number_input("Değer Kaybı Islah Artış Tutarı (TL) [deger_kaybi_islah_tutari]", min_value=0.0, value=0.0)
+        hasar_bedeli_kaybi_islah_tutari = st.number_input("Hasar Bedeli Islah Artış Tutarı (TL) [hasar_bedeli_kaybi_islah_tutari]", min_value=0.0, value=0.0)
+    
+    # Tarih, Plaka ve Unvan Girişleri
+    kaza_tarihi_dt = st.date_input("Kaza Tarihi [kaza_tarihi]")
+    kaza_tarihi = kaza_tarihi_dt.strftime("%d.%m.%Y")
+    
+    basvuru_sahibine_ait_arac_plakasi = st.text_input("Başvuru Sahibine Ait Araç Plakası [basvuru_sahibine_ait_arac_plakasi]", value="34ABC123")
+    davali_sirkete_sigortali_arac_plakasi = st.text_input("Davalı Şirkete Sigortalı Araç Plakası [davali_sirkete_sigortali_arac_plakasi]", value="34XYZ789")
+    davalı_sigorta_sigorta_sirketi_unvani = st.text_input("Davalı Sigorta Şirketi Unvanı [davalı_sigorta_sigorta_sirketi_unvani]", value="X Sigorta A.Ş.")
+    
+    # Beyanlar ve Nitelikler
+    basvuru_sahibi_beyani = st.text_area("Başvuru Sahibi Beyanı Summary [basvuru_sahibi_beyani]", value="oluşan hasarın tazmin edilmesi gerektiği")
+    sirket_cevap_verdi_mi = st.checkbox("Davalı Şirket Cevap Dilekçesi Sundu mu?", value=True)
+    sigorta_sirketi_beyani = ""
+    if sirket_cevap_verdi_mi:
+        sigorta_sirketi_beyani = st.text_area("Sigorta Şirketi Cevap Özeti [sigorta_sirketi_beyani]")
+        
+    faiz_turu = st.selectbox("Talep Edilen Faiz Türü [faiz_turu]", ["Avans", "Yasal", "Talep Yok"])
+    basvuran_ek_belgeleri = st.text_input("Başvuran Ek Belgeleri [basvuran_ek_belgeleri]", value="ekspertiz raporu, kaza fotoğrafları")
+    başvurunun_niteligi = st.text_input("Başvurunun Niteliği [başvurunun_niteligi]", value="kısmi dava olarak")
+
+with col2:
+    st.subheader("🔬 2. Bilirkişi Raporu ve Ödeme Alanları")
+    bilirkisi_raporu_alindi = st.checkbox("Bilirkişi Raporu Alındı mı?", value=True)
+    
+    # Rapor ve Ödeme Tutarları
+    bilirkişi_raporunda_tespit_edilen_dk_tutari = 0.0
+    bilirkişi_raporunda_tespit_edilen_hb_tutari_kdv_haric = 0.0
+    bilirkişi_raporunda_tespit_edilen_hb_tutari_kdv_dahil = 0.0
+    bilirkişi_raporunda_tespit_edilen_hb_tutari_iskontolu_kdv_haric = 0.0
+    bilirkişi_raporunda_tespit_edilen_hb_tutari_iskontolu_kdv_dahil = 0.0
+    
+    davali_siket_dk_odemesi = 0.0
+    davali_siket_hb_odemesi = 0.0
+    davali_siket_dk_odeme_tarihi = ""
+    davali_siket_hb_odeme_tarihi = ""
+    
+    if bilirkisi_raporu_alindi:
+        if "Değer Kaybı" in basvuru_konusu:
+            bilirkişi_raporunda_tespit_edilen_dk_tutari = st.number_input("Raporda Tespit Edilen Değer Kaybı Tutarı", min_value=0.0)
+            davali_siket_dk_odemesi = st.number_input("Davalı Şirket Değer Kaybı Ödemesi (TL)", min_value=0.0)
+            if davali_siket_dk_odemesi > 0:
+                davali_siket_dk_odeme_tarihi = st.text_input("Değer Kaybı Ödeme Tarihi (GG.AA.YYYY)")
+                
+        if "Hasar Bedeli" in basvuru_konusu:
+            bilirkişi_raporunda_tespit_edilen_hb_tutari_kdv_haric = st.number_input("Raporda Tespit Edilen HB Tutarı (KDV Hariç)", min_value=0.0)
+            bilirkişi_raporunda_tespit_edilen_hb_tutari_kdv_dahil = st.number_input("Raporda Tespit Edilen HB Tutarı (KDV Dahil)", min_value=0.0)
+            bilirkişi_raporunda_tespit_edilen_hb_tutari_iskontolu_kdv_haric = st.number_input("Raporda Tespit Edilen İskontolu HB Tutarı (KDV Hariç)", min_value=0.0)
+            bilirkişi_raporunda_tespit_edilen_hb_tutari_iskontolu_kdv_dahil = st.number_input("Raporda Tespit Edilen İskontolu HB Tutarı (KDV Dahil)", min_value=0.0)
+            davali_siket_hb_odemesi = st.number_input("Davalı Şirket Hasar Bedeli Ödemesi (TL)", min_value=0.0)
+            if davali_siket_hb_odemesi > 0:
+                davali_siket_hb_odeme_tarihi = st.text_input("Hasar Bedeli Ödeme Tarihi (GG.AA.YYYY)")
+
+    # İskonto ve Kusur Oranları
+    bilirkişi_raporunda_uygulan_yedek_parca_iskonto_orani = st.text_input("Yedek Parça İskonto Oranı", value="%0")
+    bilirkişi_raporunda_uygulan_iscilik_iskonto_orani = st.text_input("İşçilik İskonto Oranı", value="%0")
+    
+    basvuru_sahibine_ait_arac_kusuru_orani = st.number_input("Başvuru Sahibi Kusur Oranı (%) [basvuru_sahibine_ait_arac_kusuru]", min_value=0, max_value=100, value=0)
+    basvuru_sahibine_ait_arac_kusuru = f"%{basvuru_sahibine_ait_arac_kusuru_orani}"
+    davali_sirkete_sigortali_arac_kusuru = f"%{100 - basvuru_sahibine_ait_arac_kusuru_orani}"
+    kusur_orani_float = (100 - basvuru_sahibine_ait_arac_kusuru_orani) / 100.0
+
+    st.subheader("💸 3. Karar ve Yargılama Giderleri")
+    hakem_tarafinden_kabul_edilen_deger_kaybi_tutari = st.number_input("Hakem Tarafından Kabul Edilen Değer Kaybı Tutarı", min_value=0.0)
+    hakem_tarafinden_kabul_edilen_hasar_bedeli_tutari = st.number_input("Hakem Tarafından Kabul Edilen Hasar Bedeli Tutarı", min_value=0.0)
+    ekspertiz_ucreti_tutari = st.number_input("Ekspertiz Ücreti Tutarı (TL) [ekspertiz_ucreti_tutari]", min_value=0.0)
+    basvuru_tarihi_dt = st.date_input("Sigorta Şirketine Yapılan Başvuru Tarihi")
+    
+    # Harç Giderleri
+    tebligat_ucreti = st.number_input("Tebligat Ücreti (TL)", min_value=0.0)
+    ilk_basvuru_ucreti = st.number_input("İlk Başvuru Ücreti (TL)", min_value=0.0)
+    islah_tamamlama_harci = st.number_input("Islah Tamamlama Harcı (TL)", min_value=0.0)
+    
+    # Bilirkişi Ücretleri
+    bilirkişi_ücreti_dk = st.number_input("Bilirkişi Ücreti - Değer Kaybı (TL)", min_value=0.0)
+    bilirkişi_ücreti_hb_dk = st.number_input("Bilirkişi Ücreti - Hasar/Değer Kaybı Ortak (TL)", min_value=0.0)
+    bilirkişi_ücreti_kusur = st.number_input("Bilirkişi Ücreti - Kusur (TL)", min_value=0.0)
+    
+    # Vekalet Ücretleri
+    başvuran_lehine_vekalet_ucreti = st.number_input("Başvuran Lehine Vekalet Ücreti (TL)", min_value=0.0)
+    davali_sirket_lehine_vekalet_ücreti = st.number_input("Davalı Şirket Lehine Vekalet Ücreti (TL)", min_value=0.0)
+
+# --- MATEMATİKSEL ARKA PLAN HESAPLAMALARI ---
+toplam_islah_tutari = hasar_bedeli_kaybi_islah_tutari + deger_kaybi_islah_tutari
+ilk_dava_degeri = ilk_dava_degeri_dk + ilk_dava_degeri_hb
+nihai_kontrol_tutari = toplam_islah_tutari if islah_var else ilk_dava_degeri
+
+# --- BUTONA BASILDIĞINDA ŞABLON TETİKLENİR ---
+if st.button("Karar Metnini Şablona İşle ve Hazırla"):
+    
+    # --- BAŞLIK 1.1 MANTIĞI ---
+    if basvuru_konusu in ["Değer Kaybı", "Değer Kaybı ve Kusur"]:
+        degisken_1_1 = "değer kaybının"
+    elif basvuru_konusu in ["Hasar Bedeli", "Hasar Bedeli ve Kusur"]:
+        degisken_1_1 = "hasar bedelinin"
+    else:
+        degisken_1_1 = "hasar bedelinin"
+        
+    uyusmazlik_konusu_olay_talep_paragrafi = f"Uyuşmazlık konusu; davalı Şirket nezdinde Karayolları Motorlu Araçlar Zorunlu Mali Sorumluluk Sigorta Poliçesi ile teminat altına alınan aracın {kaza_tarihi} tarihinde karıştığı kaza sonucunda başvuru sahibine ait araçta oluşan {degisken_1_1} tazmin edilmesi talebine ilişkindir."
+
+    # --- BAŞLIK 1.2 MANTIĞI ---
+    degisken_1_3 = "Hakemliğimizce" if nihai_kontrol_tutari < 122000 else "Heyetimizce"
+    
+    if bilirkisi_raporu_alindi:
+        odeme_var_mi = (davali_siket_dk_odemesi > 0) or (davali_siket_hb_odemesi > 0)
+        if islah_var and odeme_var_mi:
+            degisken_1_2 = "ıslah edilen ve konusuz kaldığı anlaşılan"
+        elif islah_var and not odeme_var_mi:
+            degisken_1_2 = "ıslah edilen"
+        elif not islah_var and odeme_var_mi:
+            degisken_1_2 = "konusuz kaldığı anlaşılan"
+        else:
+            degisken_1_2 = ""
+        ara_bosluk = f"{degisken_1_2} " if degisken_1_2 else ""
+        metin_1_2 = f"yargılama sırasında alınan bilirkişi raporunun taraflara tebliğ sonrasında {ara_bosluk}uyuşmazlık {degisken_1_3} karara bağlanmıştır."
+    else:
+        metin_1_2 = f"dosya muhteviyatı ve ilgili mevzuat çerçevesinde uyuşmazlık {degisken_1_3} karara bağlanmıştır."
+        
+    basvurunun_hakeme_intikaline_incelenmesine_iliskin_surec_paragrafi = f"Başvuru sahibi talebinin davalı tarafından karşılanmaması nedeniyle ortaya çıkan uyuşmazlığın çözümü için tahkim yargılamasına başvurulmuş, {metin_1_2}"
+
+    # --- BAŞLIK 2.1 MANTIĞI ---
+    if faiz_turu == "Avans":
+        degisken_2_1_4 = "avans faizi ile birlikte"
+    elif faiz_turu == "Yasal":
+        degisken_2_1_4 = "yasal faizi ile birlikte"
+    else:
+        degisken_2_1_4 = " "
+
+    if basvuru_konusu in ["Değer Kaybı", "Değer Kaybı ve Kusur"]:
+        degisken_2_1_1 = "oluşan hasar nedeniyle aracın değer kaybına uğradığı"
+    elif basvuru_konusu in ["Hasar Bedeli", "Hasar Bedeli ve Kusur"]:
+        degisken_2_1_1 = "hasar meydana geldiği"
+    else:
+        degisken_2_1_1 = "hasar meydana geldiği ve aracın değer kaybına uğradığı"
+
+    nitelik_ve_faiz = f"{başvurunun_niteligi} {degisken_2_1_4}".strip()
