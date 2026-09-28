@@ -6,6 +6,12 @@ import io
 st.set_page_config(layout="wide", page_title="Sigorta Tahkim Otomasyonu")
 st.title("⚖️ Sigorta Tahkim Komisyonu Karar Otomasyonu")
 
+# Session state ilk kurulum (Bulut kilitlenmesini önlemek için)
+if "file_ready" not in st.session_state:
+    st.session_state.file_ready = False
+if "download_data" not in st.session_state:
+    st.session_state.download_data = None
+
 # --- FORMA GİRİLECEK BİLGİLER (SÜTUN DÜZENİ) ---
 col1, col2 = st.columns(2)
 
@@ -35,7 +41,7 @@ with col1:
     kaza_tarihi = kaza_tarihi_dt.strftime("%d.%m.%Y")
     
     basvuru_sahibine_ait_arac_plakasi = st.text_input("Başvuru Sahibine Ait Araç Plakası [basvuru_sahibine_ait_arac_plakasi]", value="34ABC123")
-    davali_sirkete_sigortali_arac_plakasi = st.text_input("Davalı Şirikete Sigortalı Araç Plakası [davali_sirkete_sigortali_arac_plakasi]", value="34XYZ789")
+    davali_sirkete_sigortali_arac_plakasi = st.text_input("Davalı Şirkete Sigortalı Araç Plakası [davali_sirkete_sigortali_arac_plakasi]", value="34XYZ789")
     davalı_sigorta_sigorta_sirketi_unvani = st.text_input("Davalı Sigorta Şirketi Unvanı [davalı_sigorta_sigorta_sirketi_unvani]", value="X Sigorta A.Ş.")
     
     basvuru_sahibi_beyani = st.text_area("Başvuru Sahibi Beyanı Summary [basvuru_sahibi_beyani]", value="oluşan hasarın tazmin edilmesi gerektiği")
@@ -111,15 +117,15 @@ nihai_kontrol_tutari = toplam_islah_tutari if islah_var else ilk_dava_degeri
 
 if st.button("Karar Metnini Şablona İşle ve Hazırla"):
     
-    # --- BAŞLIK 1.1 MANTIĞI ---
+    # 1.1 MANTIĞI
     degisken_1_1 = "değer kaybının" if "Değer Kaybı" in basvuru_konusu else "hasar bedelinin"
     uyusmazlik_konusu_olay_talep_paragrafi = f"Uyuşmazlık konusu; davalı Şirket nezdinde Karayolları Motorlu Araçlar Zorunlu Mali Sorumluluk Sigorta Poliçesi ile teminat altına alınan aracın {kaza_tarihi} tarihinde karıştığı kaza sonucunda başvuru sahibine ait araçta oluşan {degisken_1_1} tazmin edilmesi talebine ilişkindir."
 
-    # --- BAŞLIK 1.2 MANTIĞI ---
+    # 1.2 MANTIĞI
     degisken_1_3 = "Hakemliğimizce" if nihai_kontrol_tutari < 122000 else "Heyetimizce"
     degisken_1_2 = ""
     if bilirkisi_raporu_alindi:
-        hasar_bedeli_veya_dk_odemesi_var_mi = (davali_siket_dk_odemesi > 0) or (davali_siket_hb_odemesi > 0)
+        hasar_bedeli_veya_dk_odemesi_var_mi = (davali_siket_hb_odemesi > 0) or (davali_siket_dk_odemesi > 0)
         if islah_var and hasar_bedeli_veya_dk_odemesi_var_mi:
             degisken_1_2 = "ıslah edilen ve konusuz kaldığı anlaşılan"
         elif islah_var and not hasar_bedeli_veya_dk_odemesi_var_mi:
@@ -133,7 +139,7 @@ if st.button("Karar Metnini Şablona İşle ve Hazırla"):
         
     basvurunun_hakeme_intikaline_incelenmesine_iliskin_surec_paragrafi = f"Başvuru sahibi talebinin davalı tarafından karşılanmaması nedeniyle ortaya çıkan uyuşmazlığın çözümü için tahkim yargılamasına başvurulmuş, {metin_1_2}"
 
-    # --- BAŞLIK 2.1 MANTIĞI ---
+    # 2.1 MANTIĞI
     degisken_2_1_4 = "avans faizi ile birlikte" if faiz_turu == "Avans" else "yasal faizi ile birlikte" if faiz_turu == "Yasal" else " "
     
     if basvuru_konusu in ["Değer Kaybı", "Değer Kaybı ve Kusur"]:
@@ -145,10 +151,7 @@ if st.button("Karar Metnini Şablona İşle ve Hazırla"):
 
     nitelik_ve_faiz = f"{başvurunun_niteligi} {degisken_2_1_4}".strip()
     
-    # DÜZ HİZALANMIŞ YENİ BAĞIMSIZ BLOKLAR (Girinti Riski Kaldırıldı)
+    # 2.1.3 Alanı Düz Akış
     degisken_2_1_3 = f"değer kaybı bedelinin {nitelik_ve_faiz}"
     if "Değer Kaybı" in basvuru_konusu and "Hasar Bedeli" not in basvuru_konusu and ekspertiz_ucreti_tutari > 0:
         degisken_2_1_3 = f"değer kaybı bedelinin {nitelik_ve_faiz} ve {ekspertiz_ucreti_tutari:,.2f} TL ekspertiz ücretinin yargılama giderleri arasında"
-        
-    if "Hasar Bedeli" in basvuru_konusu and "Değer Kaybı" not in basvuru_konusu:
-        degisken_2_1_3 = f"hasar bedelinin {nitelik_ve_faiz}"
