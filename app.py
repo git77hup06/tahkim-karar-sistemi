@@ -64,7 +64,10 @@ if st.button("Karar Metnini Şablona İşle ve Hazırla"):
     degisken_1_2_1 = f"yargılama sırasında alınan bilirkişi raporunun taraflara tebliğ sonrasında {degisken_1_2_2} uyuşmazlık {degisken_1_2_3} karara bağlanmıştır."
     uyusmazlik_konusu_olay_talep_paragrafi = f"Uyuşmazlık konusu; davalı Şiriket nezdinde Karayolları Motorlu Araçlar Zorunlu Mali Sorumluluk Sigorta Poliçesi ile teminat altına alınan aracın {degisken_1} tarihinde karıştığı kaza sonucunda başvuru sahibine ait araçta oluşan hasar bedelinin tazmin edilmesi talebine ilişkindir."
     basvurunun_hakeme_intikaline_incelenmesine_iliskin_surec_paragrafi = f"Başvuru sahibi talebinin davalı tarafından karşılanmaması nedeniyle ortaya çıkan uyuşmazlığın çözümü için tahkim yargılamasına başvurulmuş, {degisken_1_2_1}"
-    basvuru_sahibinin_iddia_delil_talepleri_paragrafi = f"Başvuru sahibi vekili beyanında özetle; müvekkiline ait araçta hasar meydana geldiği, {degisken_4} belirtilerek, şimdilik {degisken_2:,.2f} TL {degisken_2_1_2} davalı Şirket tarafından karşılanması talep edilmiştir. Delil olarak {degisken_6} dosyaya sunulmuştur."
+    
+    # 2.1 PARAGRAFI SİZİN YAZDIĞINIZ RESMİ METİNLE BİREBİR DEĞİŞTİRİLDİ
+    basvuru_sahibinin_iddia_delil_talepleri_paragrafi = f"Başvuru sahibi vekili beyanında özetle; müvekkiline ait araçta hasar meydana geldiği, {degisken_4} belirtilerek, şimdilik {degisken_2:,.2f} TL hasar bedelinin {degisken_2_1_4} davalı Şirket tarafından karşılanması talep edilmiştir. Delil olarak {degisken_6} dosyaya sunulmuştur."
+    
     sigorta_kuruluşunun_iddia_delil_talepleri_paragrafi = f"Davalı Şirket vekili tarafından sunulan cevap yazısında özetle; {degisken_7}" if degisken_7.strip() != "" else "Davalı Şirket tarafından herhangi bir cevap sunulmamıştır."
     uyusmazliga_uygulanacak_hukumler_paragrafi = degisken_50
     islah_ihbar = f"dava değeri KDV dahil {degisken_3:,.2f} TL olarak ıslah edilmiştir." if islah_var else "herhangi bir beyan sunulmamıştır."
