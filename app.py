@@ -57,31 +57,18 @@ degisken_29 = 45000.0 if degisken_21 > 45000.0 else degisken_21
 if st.button("Karar Metnini Şablona İşle ve Hazırla"):
     degisken_50 = "Uyuşmazlığın çözümünde 5684 sayılı Sigortacılık Kanunu, 6102 sayılı Türk Ticaret Kanunu, 6098 sayılı Türk Borçlar Kanunu, 2918 sayılı Karayolları Trafik Kanunu, 6100 sayılı Hukuk Muhakemeleri Kanunu ve sair mevzuat dikkate alınmıştır."
     degisken_2_1_4 = "avans faizi ile birlikte" if degisken_5 == "avans" else "yasal faizi ile birlikte" if degisken_5 == "yasal" else " "
-    
-    # Sizin formüllerinizin birebir eşlemesi
-    degisken_1_1_1 = "hasar bedelinin"
-    degisken_2_1_1 = " hasar meydana geldiği "
-    degisken_2_1_3 = degisken_2_1_4
-    degisken_2_1_2 = f"hasar bedelinin {degisken_2_1_3}"
-    degisken_4_1 = "hasar bedelinin"
-
+    degisken_2_1_2 = f"hasar bedelinin {degisken_2_1_4}"
     nihai_deger = degisken_3 if islah_var else degisken_2
     degisken_1_2_3 = "Hakemliğimizce" if nihai_deger < 122000 else "Heyetimizce"
     degisken_1_2_2 = "ıslah edilen" if islah_var else " "
     degisken_1_2_1 = f"yargılama sırasında alınan bilirkişi raporunun taraflara tebliğ sonrasında {degisken_1_2_2} uyuşmazlık {degisken_1_2_3} karara bağlanmıştır."
-    
-    uyusmazlik_konusu_olay_talep_paragrafi = f"Uyuşmazlık konusu; davalı Şirket nezdinde Karayolları Motorlu Araçlar Zorunlu Mali Sorumluluk Sigorta Poliçesi ile teminat altına alınan aracın {degisken_1} tarihinde karıştığı kaza sonucunda başvuru sahibine ait araçta oluşan {degisken_1_1_1} tazmin edilmesi talebine ilişkindir."
+    uyusmazlik_konusu_olay_talep_paragrafi = f"Uyuşmazlık konusu; davalı Şiriket nezdinde Karayolları Motorlu Araçlar Zorunlu Mali Sorumluluk Sigorta Poliçesi ile teminat altına alınan aracın {degisken_1} tarihinde karıştığı kaza sonucunda başvuru sahibine ait araçta oluşan hasar bedelinin tazmin edilmesi talebine ilişkindir."
     basvurunun_hakeme_intikaline_incelenmesine_iliskin_surec_paragrafi = f"Başvuru sahibi talebinin davalı tarafından karşılanmaması nedeniyle ortaya çıkan uyuşmazlığın çözümü için tahkim yargılamasına başvurulmuş, {degisken_1_2_1}"
-    
-    # 2.1 PARAGRAFI ORİJİNAL FORMÜLÜNÜZLE %100 DOĞRU BAĞLANDI
-    basvuru_sahibinin_iddia_delil_talepleri_paragrafi = f"Başvuru sahibi vekili tarafından Sigorta Tahkim Komisyonu’na yapılan uyuşmazlık başvuru formu ve eki beyanında özetle; Davalı Şirket tarafından Karayolları Motorlu Araçlar Zorunlu Mali Sorumluluk Sigorta Poliçesi ile sigortalı aracın karıştığı kaza neticesinde müvekkiline ait araçta {degisken_2_1_1}, {degisken_4} belirtilerek, fazlaya ilişkin hakları saklı kalmak üzere şimdilik {degisken_2:,.2f} TL {degisken_2_1_2} davalı Şirket tarafından karşılanması talep edilmiştir. Vekaletname ile birlikte iddialara dayanak olarak, davalı şirkete gönderilen talep yazısı, {degisken_6}, hasarlı araç fotoğrafları, kaza tespit tutanağı, araç ruhsatı ve sair deliller dosyaya sunulmuştur."
-    
-    sigorta_kuruluşunun_iddia_delil_talepleri_paragrafi = f"Davalı Şirket vekili tarafından Sigorta Tahkim Komisyonu’na sunulan cevap yazısında özetle; {degisken_7}" if degisken_7.strip() != "" else "Davalı Şirket tarafından Sigorta Tahkim Komisyonu’na herhangi bir cevap sunulmamıştır."
+    basvuru_sahibinin_iddia_delil_talepleri_paragrafi = f"Başvuru sahibi vekili tarafından Sigorta Tahkim Komisyonu’na yapılan uyuşmazlık başvuru formu ve eki beyanında özetle; Davalı Şirket tarafından Karayolları Motorlu Araçlar Zorunlu Mali Sorumluluk Sigorta Poliçesi ile sigortalı aracın karıştığı kaza neticesinde müvekkiline ait araçta hasar meydana geldiği, {degisken_4} belirtilerek, fazlaya ilişkin hakları saklı kalmak üzere şimdilik {degisken_2:,.2f} TL {degisken_2_1_2} davalı Şirket tarafından karşılanması talep edilmiştir. Vekaletname ile birlikte iddialara dayanak olarak, davalı şirkete gönderilen talep yazısı, {degisken_6}, hasarlı araç fotoğrafları, kaza tespit tutanağı, araç ruhsatı ve sair deliller dosyaya sunulmuştur."
+    sigorta_kuruluşunun_iddia_delil_talepleri_paragrafi = f"Davalı Şirket vekili tarafından sunulan cevap yazısında özetle; {degisken_7}" if degisken_7.strip() != "" else "Davalı Şirket tarafından herhangi bir cevap sunulmamıştır."
     uyusmazliga_uygulanacak_hukumler_paragrafi = degisken_50
     islah_ihbar = f"dava değeri KDV dahil {degisken_3:,.2f} TL olarak ıslah edilmiştir." if islah_var else "herhangi bir beyan sunulmamıştır."
-    
     f1 = f"Başvuru sahibinin talebinin KABULÜ ile; {degisken_21:,.2f} TL hasar bedelinin {degisken_20} tarihinden itibaren işleyecek yasal faizi ile birlikte davalı Şirket tarafından başvuru sahibine ödenmesine,"
     f2 = f"Başvuru sahibinin sarf etmiş olduğu {degisken_31:,.2f} TL başvuru ücreti, {degisken_23:,.2f} TL tebligat ücreti, {degisken_18:,.2f} TL ekspertiz ücreti ve {degisken_27:,.2f} TL bilirkişi ücreti toplamı {degisken_32:,.2f} TL yargılama giderinin davalı Şirket tarafından başvuru sahibine ödenmesine,"
-    f3 = f"Başvuru sahibi kendisini vekil ile temsil ettirdiğinden, 5684 sayılı Kanunun 30/17 maddesi and AAÜT gereğince belirlenen {degisken_29:,.2f} TL vekalet ücretinin davalı Şirketten tahsil edilerek başvuru sahibine ödenmesine,"
+    f3 = f"Başvuru sahibi kendisini vekil ile temsil ettirdiğinden, 5684 sayılı Kanunun 30/17 maddesi ve AAÜT gereğince belirlenen {degisken_29:,.2f} TL vekalet ücretinin davalı Şirketten tahsil edilerek başvuru sahibine ödenmesine,"
     f4 = f"5684 sayılı Sigortacılık Kanununun 30/12 maddesi hükmü gereği kararın bildirim tarihinden itibaren 10 gün içinde Sigorta Tahkim Komisyonu nezdinde İTİRAZ YOLU AÇIK OLMAK ÜZERE oy birliği ile karar verildi. {datetime.now().strftime('%d.%m.%Y')}"
-    
