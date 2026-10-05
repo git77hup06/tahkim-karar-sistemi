@@ -14,7 +14,7 @@ except Exception as e:
     st.error("Lütfen 'kurallar.xlsx' dosyasının mevcut olduğundan emin olun.")
     st.stop()
 
-# 2. Üst Menü: Şablon Seçimi (Tek Yetkili Seçim Kutusu)
+# 2. Üst Menü: Şablon Seçimi
 konu_listesi = df_kurallar["Basvuru_Konusu"].unique()
 secilen_konu = st.selectbox("📋 Başvuru Konusu Seçiniz:", konu_listesi)
 
@@ -24,7 +24,8 @@ if secilen_satir_df.empty:
     st.error(f"Hata: Excel'de '{secilen_konu}' konusuna ait hiçbir veri bulunamadı!")
     st.stop()
 
-secilen_satir = secilen_satir_df.iloc
+# .iloc[0] kullanarak ilk eşleşen satırı bir Seri (Row) olarak GÜVENLE çekiyoruz (Hatayı çözen ana kısım)
+secilen_satir = secilen_satir_df.iloc[0]
 sablon_yolu = secilen_satir["Word_Sablon_Yolu"]
 alanlar_ham = secilen_satir["Gerekli_Alanlar"]
 
@@ -46,7 +47,7 @@ with st.form(key="tahkim_formu"):
         etiket = alan.replace("_", " ").title()
         alan_key = alan.strip()
         
-        # Mükerrerliği önlemek için eğer kazara excelde kaldıysa basvuru_konusu'nu form içinde es geç
+        # Mükerrerliği önlemek için basvuru_konusu'nu form içinde es geç
         if "basvuru_konusu" in alan_key.lower():
             continue
             
@@ -77,7 +78,7 @@ def safe_get(sozluk, anahtar_kelime, varsayilan=0.0):
 
 # 5. Form Gönderildiğinde Tetiklenen Hesaplama Alanı
 if submit_button:
-    # Ana menüden seçilen konuyu doğrudan içeriye enjekte ediyoruz (Çakışmayı önleyen kısım)
+    # Ana menüden seçilen konuyu doğrudan içeriye enjekte ediyoruz
     input_verileri["basvuru_konusu"] = secilen_konu.lower()
     
     # Tarih formatlamaları
@@ -132,7 +133,7 @@ if submit_button:
     degisken_1_2_3 = "Hakemliğimizce" if nihai_deger_kontrol < 122000 else "Heyetimizce"
     degisken_1_2_1 = f"yargılama sırasında alınan bilirkişi raporunun taraflara tebliğ sonrasında {degisken_1_2_2} uyuşmazlık {degisken_1_2_3} karara bağlanmıştır."
 
-    # Şirket Cevap Beyanı
+    # Şiriket Cevap Beyanı
     sigorta_beyani = str(safe_get(input_verileri, "sigorta_sirketi_beyani", "")).strip()
     if not sigorta_beyani or sigorta_beyani == "0.0":
         sigorta_beyani = str(safe_get(input_verileri, "sirket_beyani", "")).strip()
@@ -188,7 +189,7 @@ if submit_button:
         doc.save(mem_file)
         mem_file.seek(0)
         
-        st.success("🎉 Mükerrerlik giderildi! Karar metni başarıyla hazırlandı.")
+        st.success("🎉 İndeksleme sorunu giderildi! Karar metni başarıyla işlendi.")
         st.download_button(
             label="📄 Hazır Word Dosyasını İndirmek İçin Tıklayın",
             data=mem_file,
