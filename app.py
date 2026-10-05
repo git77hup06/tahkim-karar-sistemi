@@ -25,7 +25,7 @@ if secilen_satir_df.empty:
     st.error(f"Hata: Excel'de '{secilen_konu}' konusuna ait hiçbir veri bulunamadı!")
     st.stop()
 
-# .iloc[0] ile Pandas tablosundaki ilk eşleşen satırı güvenle seçiyoruz
+# .iloc ile Pandas tablosundaki ilk eşleşen satırı güvenle seçiyoruz
 secilen_satir = secilen_satir_df.iloc[0]
 sablon_yolu = secilen_satir["Word_Sablon_Yolu"]
 alanlar_ham = secilen_satir["Gerekli_Alanlar"]
@@ -38,33 +38,39 @@ st.subheader(f"🔬 {secilen_konu} - Karar Parametreleri Giriş Formu")
 
 # Form Girdilerini Toplama Sözlüğü
 input_verileri = {}
-col1, col2 = st.columns(2)
 
-# 3. Alan Tiplerini Akıllıca Ayrıştırıp Ekrana Basma
-for index, alan in enumerate(gerekli_parametreler):
-    hedef_kol = col1 if index % 2 == 0 else col2
-    etiket = alan.replace("_", " ").title()
+# 3. Streamlit Form Yapısı (Butonun çalışmama sorununu çözen ana mimari)
+with st.form(key="tahkim_formu"):
+    col1, col2 = st.columns(2)
     
-    # Özel Kontroller (Seçim kutuları, Tarihler, Sayılar ve Metin alanları)
-    if alan == "basvuru_konusu":
-        input_verileri[alan] = hedef_kol.selectbox(etiket, ["hasar bedeli", "hasar bedeli ve kusur"], key=alan)
-    elif alan == "basvuru_sahibi_tarafindan_talep_edilen_faiz_turu":
-        input_verileri[alan] = hedef_kol.selectbox(etiket, ["avans", "yasal", "Faiz talebi yok"], key=alan)
-    elif "tarih" in alan.lower():
-        tarih_dt = hedef_kol.date_input(f"📅 {etiket}", key=alan)
-        input_verileri[alan] = tarih_dt
-    elif any(x in alan.lower() for x in ["ucreti", "harci", "tutari", "bedeli", "degeri", "orani", "odemesi"]):
-        input_verileri[alan] = hedef_kol.number_input(f"💳 {etiket}", min_value=0.0, value=0.0, step=50.0, key=alan)
-    elif "beyani" in alan.lower() or "belgeler" in alan.lower():
-        input_verileri[alan] = hedef_kol.text_area(f"📝 {etiket}", key=alan)
-    else:
-        input_verileri[alan] = hedef_kol.text_input(f"✍️ {etiket}", key=alan)
+    # Alan Tiplerini Akıllıca Ayrıştırıp Ekrana Basma
+    for index, alan in enumerate(gerekli_parametreler):
+        hedef_kol = col1 if index % 2 == 0 else col2
+        etiket = alan.replace("_", " ").title()
+        
+        # Özel Kontroller (Seçim kutuları, Tarihler, Sayılar ve Metin alanları)
+        if alan == "basvuru_konusu":
+            input_verileri[alan] = hedef_kol.selectbox(etiket, ["hasar bedeli", "hasar bedeli ve kusur"], key=alan)
+        elif alan == "basvuru_sahibi_tarafindan_talep_edilen_faiz_turu":
+            input_verileri[alan] = hedef_kol.selectbox(etiket, ["avans", "yasal", "Faiz talebi yok"], key=alan)
+        elif "tarih" in alan.lower():
+            tarih_dt = hedef_kol.date_input(f"📅 {etiket}", key=alan)
+            input_verileri[alan] = tarih_dt
+        elif any(x in alan.lower() for x in ["ucreti", "harci", "tutari", "bedeli", "degeri", "orani", "odemesi"]):
+            input_verileri[alan] = hedef_kol.number_input(f"💳 {etiket}", min_value=0.0, value=0.0, step=50.0, key=alan)
+        elif "beyani" in alan.lower() or "belgeler" in alan.lower():
+            input_verileri[alan] = hedef_kol.text_area(f"📝 {etiket}", key=alan)
+        else:
+            input_verileri[alan] = hedef_kol.text_input(f"✍️ {etiket}", key=alan)
+            
+    st.markdown("---")
+    islah_var = st.checkbox("🔄 Talep Artırımı (Islah) Var mı?")
+    
+    # Formun kendi onay butonu
+    submit_button = st.form_submit_button(label="🚀 Karar Metnini Şablona İşle ve Hazırla")
 
-st.markdown("---")
-islah_var = st.checkbox("🔄 Talep Artırımı (Islah) Var mı?")
-
-# 4. "Karar Hazırla" Butonuna Basıldığında Formülleri Çalıştırma
-if st.button("🚀 Karar Metnini Şablona İşle ve Hazırla"):
+# 4. Form Gönderildiğinde Formülleri Çalıştırma
+if submit_button:
     # Tarih formatlamaları
     kaza_tarihi_dt = input_verileri.get("kaza_tarihi", datetime.now())
     kaza_tarihi = kaza_tarihi_dt.strftime("%d.%m.%Y") if isinstance(kaza_tarihi_dt, datetime) else str(kaza_tarihi_dt)
@@ -147,7 +153,7 @@ if st.button("🚀 Karar Metnini Şablona İşle ve Hazırla"):
         "degisken_29": f"{degisken_29:,.2f}",
         "degisken_31": f"{degisken_31:,.2f}",
         "degisken_32": f"{degisken_32:,.2f}",
-        "degisken_50": "Uyuşmazlığın çözümünde 5684 sayılı Sigortacılık Kanunu, 6102 sayılı Türk Ticaret Kanunu, 6098 sayılı Türk Borçlar Kanunu, 2918 sayılı Karayolları Trafik Kanunu, 6100 sayılı Hukuk Muhakemeleri Kanunu ve sair mevzuat dikkate alınmıştır.",
+        "degisken_50": "Uyuşmazlığın çözümünde 5684 sayılı Sigortacılık Kanunu, 6102 sayılı Türk Ticaret Kanunu, 6098 sayılı Türk Borçlar Kanunu, 2918 sayılı Karayolları Trafik Kanunu, 6100 sayılı Hukuk Müşavirliği Kanunu ve sair mevzuat dikkate alınmıştır.",
         "degisken_1_1_1": degisken_1_1_1,
         "degisken_1_2_1": degisken_1_2_1,
         "degisken_2_1_1": "hasar meydana geldiği",
@@ -157,3 +163,22 @@ if st.button("🚀 Karar Metnini Şablona İşle ve Hazırla"):
         "islah_metni": islah_metni,
         "f1": f1
     }
+
+    # 5. Render ve İndirme Aşaması
+    try:
+        doc = DocxTemplate(sablon_yolu)
+        doc.render(word_context)
+        
+        mem_file = io.BytesIO()
+        doc.save(mem_file)
+        mem_file.seek(0)
+        
+        st.success("🎉 Karar metni başarıyla işlendi ve taslak hazırlandı!")
+        st.download_button(
+            label="📄 Hazır Word Dosyasını İndirmek İçin Tıklayın",
+            data=mem_file,
+            file_name=f"Tahkim_Karar_Taslagi_{secilen_konu}.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+    except Exception as err:
+        st.error(f"Word şablonu işlenirken bir hata oluştu: {err}")
