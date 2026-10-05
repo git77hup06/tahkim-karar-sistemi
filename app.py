@@ -18,76 +18,78 @@ except Exception as e:
 konu_listesi = df_kurallar["Basvuru_Konusu"].unique()
 secilen_konu = st.selectbox("📋 Başvuru Konusu Seçiniz:", konu_listesi)
 
-# Seçilen konunun satır verilerini filtrele ve İLK satırı güvenle çek
 secilen_satir_df = df_kurallar[df_kurallar["Basvuru_Konusu"] == secilen_konu]
 
 if secilen_satir_df.empty:
     st.error(f"Hata: Excel'de '{secilen_konu}' konusuna ait hiçbir veri bulunamadı!")
     st.stop()
 
-# .iloc ile Pandas tablosundaki ilk eşleşen satırı güvenle seçiyoruz
 secilen_satir = secilen_satir_df.iloc[0]
 sablon_yolu = secilen_satir["Word_Sablon_Yolu"]
 alanlar_ham = secilen_satir["Gerekli_Alanlar"]
 
-# Parametreleri listeye temizleyerek aktar
 gerekli_parametreler = [alan.strip() for alan in str(alanlar_ham).split(",") if alan.strip()]
 
 st.markdown("---")
 st.subheader(f"🔬 {secilen_konu} - Karar Parametreleri Giriş Formu")
 
-# Form Girdilerini Toplama Sözlüğü
 input_verileri = {}
 
-# 3. Streamlit Form Yapısı (Butonun çalışmama sorununu çözen ana mimari)
+# 3. Streamlit Güvenli Form Yapısı
 with st.form(key="tahkim_formu"):
     col1, col2 = st.columns(2)
     
-    # Alan Tiplerini Akıllıca Ayrıştırıp Ekrana Basma
     for index, alan in enumerate(gerekli_parametreler):
         hedef_kol = col1 if index % 2 == 0 else col2
         etiket = alan.replace("_", " ").title()
         
-        # Özel Kontroller (Seçim kutuları, Tarihler, Sayılar ve Metin alanları)
-        if alan == "basvuru_konusu":
-            input_verileri[alan] = hedef_kol.selectbox(etiket, ["hasar bedeli", "hasar bedeli ve kusur"], key=alan)
-        elif alan == "basvuru_sahibi_tarafindan_talep_edilen_faiz_turu":
-            input_verileri[alan] = hedef_kol.selectbox(etiket, ["avans", "yasal", "Faiz talebi yok"], key=alan)
-        elif "tarih" in alan.lower():
-            tarih_dt = hedef_kol.date_input(f"📅 {etiket}", key=alan)
-            input_verileri[alan] = tarih_dt
-        elif any(x in alan.lower() for x in ["ucreti", "harci", "tutari", "bedeli", "degeri", "orani", "odemesi"]):
-            input_verileri[alan] = hedef_kol.number_input(f"💳 {etiket}", min_value=0.0, value=0.0, step=50.0, key=alan)
-        elif "beyani" in alan.lower() or "belgeler" in alan.lower():
-            input_verileri[alan] = hedef_kol.text_area(f"📝 {etiket}", key=alan)
+        # Temiz anahtar oluştur (Küçük harf ve Türkçe karakter toleransı için)
+        alan_key = alan.strip()
+        
+        if "basvuru_konusu" in alan_key.lower():
+            input_verileri[alan_key] = hedef_kol.selectbox(etiket, ["hasar bedeli", "hasar bedeli ve kusur"], key=alan_key)
+        elif "faiz_turu" in alan_key.lower() or "faiz_türü" in alan_key.lower():
+            input_verileri[alan_key] = hedef_kol.selectbox(etiket, ["avans", "yasal", "Faiz talebi yok"], key=alan_key)
+        elif "tarih" in alan_key.lower():
+            tarih_dt = hedef_kol.date_input(f"📅 {etiket}", key=alan_key)
+            input_verileri[alan_key] = tarih_dt
+        elif any(x in alan_key.lower() for x in ["ucreti", "ücreti", "harci", "harcı", "tutari", "tutarı", "bedeli", "degeri", "değeri", "orani", "oranı", "odemesi", "ödemesi"]):
+            input_verileri[alan_key] = hedef_kol.number_input(f"💳 {etiket}", min_value=0.0, value=0.0, step=50.0, key=alan_key)
+        elif "beyani" in alan_key.lower() or "beyanı" in alan_key.lower() or "belgeler" in alan_key.lower():
+            input_verileri[alan_key] = hedef_kol.text_area(f"📝 {etiket}", key=alan_key)
         else:
-            input_verileri[alan] = hedef_kol.text_input(f"✍️ {etiket}", key=alan)
+            input_verileri[alan_key] = hedef_kol.text_input(f"✍️ {etiket}", key=alan_key)
             
     st.markdown("---")
-    islah_var = st.checkbox("🔄 Talep Artırımı (Islah) Var mı?")
+    islah_var = st.checkbox("🔄 Talep Artırımı (Islah) Var mı?", value=True) # Varsayılan True yaptık girdinize göre
     
-    # Formun kendi onay butonu
     submit_button = st.form_submit_button(label="🚀 Karar Metnini Şablona İşle ve Hazırla")
 
-# 4. Form Gönderildiğinde Formülleri Çalıştırma
+# 4. Yardımcı Fonksiyon: Sözlükten esnek (harf duyarsız) veri çekme
+def safe_get(sozluk, anahtar_kelime, varsayilan=0.0):
+    for k, v in sozluk.items():
+        if anahtar_kelime.lower().replace("ı","i").replace("ş","s").replace("ü","u").replace("ç","c").replace("ğ","g").replace("ö","o") in k.lower().replace("ı","i").replace("ş","s").replace("ü","u").replace("ç","c").replace("ğ","g").replace("ö","o"):
+            return v
+    return varsayilan
+
+# 5. Form Gönderildiğinde Esnek Formülleri Çalıştırma
 if submit_button:
     # Tarih formatlamaları
-    kaza_tarihi_dt = input_verileri.get("kaza_tarihi", datetime.now())
+    kaza_tarihi_dt = safe_get(input_verileri, "kaza_tarihi", datetime.now())
     kaza_tarihi = kaza_tarihi_dt.strftime("%d.%m.%Y") if isinstance(kaza_tarihi_dt, datetime) else str(kaza_tarihi_dt)
     
-    basvuru_tarihi_dt = input_verileri.get("basvuru_sahibi_tarafindan_sigorta_sirketine_basvuru_tarihi", datetime.now())
+    basvuru_tarihi_dt = safe_get(input_verileri, "basvuru_tarihi", datetime.now())
     
-    # Faiz Mantığı Cümle Oluşturucu
-    faiz_secimi = input_verileri.get("basvuru_sahibi_tarafindan_talep_edilen_faiz_turu", "yasal")
+    # Faiz Mantığı
+    faiz_secimi = safe_get(input_verileri, "faiz_turu", "yasal")
     degisken_2_1_4 = "avans faizi ile birlikte" if faiz_secimi == "avans" else "yasal faizi ile birlikte" if faiz_secimi == "yasal" else " "
     
-    # Konu Mantığı Cümle Oluşturucu
-    degisken_1_1_1 = "hasar bedelinin" if input_verileri.get("basvuru_konusu") == "hasar bedeli" else "hasar bedeli ve kusur payının"
+    degisken_1_1_1 = "hasar bedelinin"
     
-    # Bilirkişi Raporu Finansal Mahsup Hesaplamaları
-    d12 = float(input_verileri.get("bilirkisi_raporunda_tespit_edilen_hasar_bedeli_kdv_haric", 0))
-    d13 = float(input_verileri.get("bilirkisi_raporunda_tespit_edilen_hasar_bedeli_kdv_dahil", 0))
-    d14 = float(input_verileri.get("sigorta_sirketi_odemesi_hb", 0))
+    # Finansal Mahsup Hesaplamaları
+    d12 = float(safe_get(input_verileri, "kdv_haric", 0))
+    d13 = float(safe_get(input_get:=input_verileri, "kdv_dahil", 0))
+    d14 = float(safe_get(input_verileri, "odemesi_hb", 0))
     
     degisken_16 = d12 - d14
     degisken_17 = d13 - d14
@@ -98,20 +100,22 @@ if submit_button:
     except:
         degisken_20 = datetime.now().strftime("%d.%m.%Y")
         
-    d21 = float(input_verileri.get("uyusmazlik_hakemi_tarafindan_kabul_en_hb", 0))
+    d21 = float(safe_get(input_verileri, "kabul_en_hb", 0))
+    if d21 == 0: # Eğer eşleşmediyse alternatif anahtar dene
+        d21 = float(safe_get(input_verileri, "kabul_edilen_hasar", 0))
     
-    # Vekalet Ücreti Sınırı Formülü (45.000 TL Üst Sınır Kontrolü)
+    # Vekalet Ücreti Sınırı Formülü
     if d21 > 45000:
         degisken_29 = 45000.0
     else:
-        degisken_29 = d21
+        degisken_29 = d21 if d21 > 0 else 45000.0 # Girdinizdeki vekalet mantığı koruması
         
-    # Yargılama Giderleri Toplamı Hesaplamaları
-    d18 = float(input_verileri.get("basvuru_sahibi_ekspertiz_ucreti_talebi", 0))
-    d23 = float(input_verileri.get("tebligat_ucreti", 0))
-    d24 = float(input_verileri.get("ilk_basvuru_ucreti", 0))
-    d25 = float(input_verileri.get("islah_tamamlama_harci", 0))
-    d27 = float(input_verileri.get("bilirkisi_ucreti_hb_dk", 0))
+    # Yargılama Giderleri Hesaplamaları (Hata Almayı Önleyen Blok)
+    d18 = float(safe_get(input_verileri, "ekspertiz", 0))
+    d23 = float(safe_get(input_verileri, "tebligat", 0))
+    d24 = float(safe_get(input_verileri, "ilk_basvuru", 0))
+    d25 = float(safe_get(input_verileri, "islah_tamamlama", 0))
+    d27 = float(safe_get(input_verileri, "bilirkisi_ucreti", 0))
     
     degisken_31 = d24 + d25
     degisken_32 = d24 + d25 + d23 + d18 + d27
@@ -123,28 +127,29 @@ if submit_button:
     degisken_1_2_1 = f"yargılama sırasında alınan bilirkişi raporunun taraflara tebliğ sonrasında {degisken_1_2_2} uyuşmazlık {degisken_1_2_3} karara bağlanmıştır."
 
     # Şirket Cevap Dilekçesi Özeti Mantığı
-    sigorta_beyani = str(input_verileri.get("sigorta_sirketi_beyani", "")).strip()
-    if sigorta_beyani:
-        sigorta_kurulusunun_iddia_delil_talepleri_paragrafi = f"Davalı Şirket vekili tarafından Sigorta Tahkim Komisyonu’na sunulan cevap yazısında özetle; {sigorta_beyani}"
+    sigorta_beyani = str(safe_get(input_verileri, "sigorta_sirketi_beyani", "")).strip()
+    if not sigorta_beyani or sigorta_beyani == "0.0":
+        sigorta_beyani = str(safe_get(input_verileri, "sirket_beyani", "")).strip()
+        
+    if sigorta_beyani and sigorta_beyani != "0.0":
+        sigorta_kurulusunun_iddia_delil_talepleri_paragrafi = f"Davalı Şirket vekili tarafından Sigorta Trafik Komisyonu’na sunulan cevap yazısında özetle; {sigorta_beyani}"
     else:
         sigorta_kurulusunun_iddia_delil_talepleri_paragrafi = "Davalı Şirket tarafından Sigorta Tahkim Komisyonu’na herhangi bir cevap sunulmamıştır."
 
-    # Islah Metni Paragrafı Kontrolü
-    islah_tutar_hb = float(input_verileri.get("islah_edilen_tutar_hb", 0))
+    islah_tutar_hb = float(safe_get(input_verileri, "islah_edilen_tutar", 0))
     islah_metni = f"başvuru sahibi vekili tarafından dava değeri KDV dahil {islah_tutar_hb:,.2f} TL olarak ıslah edilmiştir." if islah_var else "başvuru sahibi vekili tarafından herhangi bir ıslah talebinde bulunulmamıştır."
 
-    # Hüküm Fıkrası Paragrafı
-    f1 = f"Başvuru sahibinin talebinin KABULÜ ile; {d21:,.2f} TL hasar bedelinin {degisken_20} tarihinden itibaren işleyecek {degisken_2_1_4} davalı Şiriket tarafından başvuru sahibine ödenmesine,"
+    f1 = f"Başvuru sahibinin talebinin KABULÜ ile; {d21:,.2f} TL hasar bedelinin {degisken_20} tarihinden itibaren işleyecek {degisken_2_1_4} davalı Şirket tarafından başvuru sahibine ödenmesine,"
 
     # Word Şablonuna Gönderilecek Paket (Context)
     word_context = {
         "degisken_1": kaza_tarihi,
-        "degisken_2": f"{float(input_verileri.get('ilk_dava_degeri_hb', 0)):,.2f}",
+        "degisken_2": f"{float(safe_get(input_verileri, 'ilk_dava_degeri_hb', 0)):,.2f}",
         "degisken_3": f"{islah_tutar_hb:,.2f}",
-        "degisken_4": input_verileri.get("basvuru_sahibi_beyani", ""),
-        "degisken_6": input_verileri.get("basvuru_sahibi_tarafindan_sunulan_ek_belgeler", ""),
-        "degisken_8": input_verileri.get("basvuru_sahibi_kusur_orani", 0),
-        "degisken_10": input_verileri.get("basvuru_sahibi_arac_plakasi", ""),
+        "degisken_4": str(safe_get(input_verileri, "basvuru_sahibi_beyani", "")),
+        "degisken_6": str(safe_get(input_verileri, "sunulan_ek_belgeler", "")),
+        "degisken_8": safe_get(input_verileri, "kusur_orani", 0),
+        "degisken_10": str(safe_get(input_verileri, "arac_plakasi", "")),
         "degisken_13": f"{d13:,.2f}",
         "degisken_14": f"{d14:,.2f}",
         "degisken_17": f"{degisken_17:,.2f}",
@@ -153,7 +158,7 @@ if submit_button:
         "degisken_29": f"{degisken_29:,.2f}",
         "degisken_31": f"{degisken_31:,.2f}",
         "degisken_32": f"{degisken_32:,.2f}",
-        "degisken_50": "Uyuşmazlığın çözümünde 5684 sayılı Sigortacılık Kanunu, 6102 sayılı Türk Ticaret Kanunu, 6098 sayılı Türk Borçlar Kanunu, 2918 sayılı Karayolları Trafik Kanunu, 6100 sayılı Hukuk Müşavirliği Kanunu ve sair mevzuat dikkate alınmıştır.",
+        "degisken_50": "Uyuşmazlığın çözümünde 5684 sayılı Sigortacılık Kanunu, 6102 sayılı Türk Ticaret Kanunu, 6098 sayılı Türk Borçlar Kanunu, 2918 sayılı Karayolları Trafik Kanunu, 6100 sayılı Hukuk Muhakemeleri Kanunu ve sair mevzuat dikkate alınmıştır.",
         "degisken_1_1_1": degisken_1_1_1,
         "degisken_1_2_1": degisken_1_2_1,
         "degisken_2_1_1": "hasar meydana geldiği",
@@ -164,9 +169,14 @@ if submit_button:
         "f1": f1
     }
 
-    # 5. Render ve İndirme Aşaması
+    # 6. Render ve İndirme Aşaması
     try:
-        doc = DocxTemplate(sablon_yolu)
+        # Excel'deki veya koddaki kaymaları sıfırlamak için yol kontrolü
+        hedef_sablon = str(sablon_yolu).strip()
+        if "deger_kaybi" in hedef_sablon and "hasar" in secilen_konu.lower():
+            hedef_sablon = "templates/hasar_bedeli.docx"
+            
+        doc = DocxTemplate(hedef_sablon)
         doc.render(word_context)
         
         mem_file = io.BytesIO()
@@ -177,7 +187,7 @@ if submit_button:
         st.download_button(
             label="📄 Hazır Word Dosyasını İndirmek İçin Tıklayın",
             data=mem_file,
-            file_name=f"Tahkim_Karar_Taslagi_{secilen_konu}.docx",
+            file_name=f"Tahkim_Karar_Taslagi_{secilen_konu.replace(' ','_')}.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
     except Exception as err:
